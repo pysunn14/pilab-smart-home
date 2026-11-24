@@ -1,0 +1,6 @@
+__pycache__/
+/spring/.gradle/
+/spring/build/
+/airpi/build/
+/common/build/
+/firepi/build/

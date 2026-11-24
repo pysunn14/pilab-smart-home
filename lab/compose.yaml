@@ -1,0 +1,72 @@
+x-pi: &pi
+  image: "${COMPOSE_PROJECT_NAME}-pi"
+  pull_policy: never
+  init: true
+  tmpfs:
+    - /board
+  environment: &pi-environment
+    PILAB_SERVER_IP: "${PILAB_PREFIX}.10"
+  depends_on:
+    spring:
+      condition: service_healthy
+
+services:
+  spring:
+    tmpfs:
+      - /tmp
+    build:
+      context: "${PILAB_BUILD}/spring"
+    environment:
+      PILAB_MAIN_IP: "${PILAB_PREFIX}.11"
+      PILAB_FIRE_IP: "${PILAB_PREFIX}.12"
+      PILAB_AIR_IP: "${PILAB_PREFIX}.13"
+      PILAB_LIGHT_IP: "${PILAB_PREFIX}.14"
+    healthcheck:
+      test: ["CMD", "curl", "--insecure", "--silent", "--fail", "https://127.0.0.1:8080/home/data"]
+      interval: 1s
+      timeout: 4s
+      retries: 35
+    networks:
+      lab:
+        ipv4_address: "${PILAB_PREFIX}.10"
+  main:
+    <<: *pi
+    build:
+      context: "${PILAB_BUILD}/pi"
+    environment:
+      <<: *pi-environment
+      PILAB_ROLE: main
+    networks:
+      lab:
+        ipv4_address: "${PILAB_PREFIX}.11"
+  fire:
+    <<: *pi
+    environment:
+      <<: *pi-environment
+      PILAB_ROLE: fire
+    networks:
+      lab:
+        ipv4_address: "${PILAB_PREFIX}.12"
+  air:
+    <<: *pi
+    environment:
+      <<: *pi-environment
+      PILAB_ROLE: air
+    networks:
+      lab:
+        ipv4_address: "${PILAB_PREFIX}.13"
+  light:
+    <<: *pi
+    environment:
+      <<: *pi-environment
+      PILAB_ROLE: light
+    networks:
+      lab:
+        ipv4_address: "${PILAB_PREFIX}.14"
+
+networks:
+  lab:
+    internal: true
+    ipam:
+      config:
+        - subnet: "${PILAB_PREFIX}.0/24"

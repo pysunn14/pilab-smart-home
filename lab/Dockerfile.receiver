@@ -1,0 +1,13 @@
+FROM python:3.11-trixie@sha256:55c475496e35ad8d898659c85f92b42d3b1c58f25f5d79023baf0840b0b4a462
+
+WORKDIR /app
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libgpiod-dev libcurl4-openssl-dev pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+COPY . .
+RUN make -C mainpi button-monitor \
+    LDLIBS=../button_monitor_gpio_stub.c \
+    LDFLAGS="-Wl,--wrap=button_gpio_open,--wrap=button_gpio_close,--wrap=button_gpio_fd,--wrap=button_gpio_read_level,--wrap=button_gpio_read_edge"
+
+ENV PYTHONUNBUFFERED=1
+ENTRYPOINT ["python", "/app/receiver_node.py"]

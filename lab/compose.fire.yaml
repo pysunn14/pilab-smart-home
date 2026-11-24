@@ -1,0 +1,17 @@
+services:
+  spring:
+    environment:
+      PILAB_SENSOR_DB_PATH: "${PILAB_SENSOR_DB_PATH:?}"
+      PILAB_FIRE_AUTO_ALARM: "${PILAB_FIRE_AUTO_ALARM:-false}"
+    volumes:
+      - sensor_history:/var/lib/pilab
+  fire:
+    init: true
+    build:
+      context: "${PILAB_BUILD}/fire"
+    networks:
+      lab:
+        ipv4_address: "${PILAB_PREFIX}.12"
+
+volumes:
+  sensor_history:

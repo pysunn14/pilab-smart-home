@@ -1,0 +1,84 @@
+name: pilab-observability
+
+x-sensor: &sensor
+  profiles: [sensors]
+  depends_on:
+    spring:
+      condition: service_healthy
+
+services:
+  spring:
+    build: ../spring
+    environment:
+      PILAB_AIR_IP: "${PILAB_PREFIX:-172.30.247}.13"
+      PILAB_AIR_AUTO_SERVO: "${PILAB_AIR_AUTO_SERVO:-false}"
+      PILAB_FIRE_IP: "${PILAB_PREFIX:-172.30.247}.12"
+      PILAB_SENSOR_DB_PATH: /var/lib/pilab/sensor-samples.sqlite
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,prometheus
+    volumes:
+      - sensor_history:/var/lib/pilab
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/actuator/health"]
+      interval: 2s
+      timeout: 3s
+      retries: 35
+    networks:
+      lab:
+        ipv4_address: "${PILAB_PREFIX:-172.30.247}.10"
+
+  prometheus:
+    image: prom/prometheus:v3.5.3@sha256:ddc2493835a1509976d5e4e0c94199c4f843ce1f42dd6bcfc8231ba734a93ff7
+    volumes:
+      - ./observability/prometheus.yaml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks: [lab]
+
+  grafana:
+    image: grafana/grafana:13.2.2@sha256:ac461fb352abc50da10a51c7d02462e9c05488f11f53f14b3ad79a8145f638a0
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_AUTH_BASIC_ENABLED: "false"
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_PLUGINS_PREINSTALL_DISABLED: "true"
+      GF_PATHS_PLUGINS: /var/lib/grafana/pilab-plugins
+      GF_SERVER_ROOT_URL: "http://127.0.0.1:${PILAB_GRAFANA_PORT:-13000}/"
+    ports:
+      - "127.0.0.1:${PILAB_GRAFANA_PORT:-13000}:3000"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/etc/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    networks: [lab, dashboard]
+
+  air:
+    <<: *sensor
+    init: true
+    build:
+      context: ..
+      dockerfile: lab/Dockerfile.air
+    networks:
+      lab:
+        ipv4_address: "${PILAB_PREFIX:-172.30.247}.13"
+
+  fire:
+    <<: *sensor
+    build:
+      context: ..
+      dockerfile: lab/Dockerfile.fire
+    networks:
+      lab:
+        ipv4_address: "${PILAB_PREFIX:-172.30.247}.12"
+
+networks:
+  lab:
+    internal: true
+    ipam:
+      config:
+        - subnet: "${PILAB_PREFIX:-172.30.247}.0/24"
+  dashboard:
+
+volumes:
+  sensor_history:
+  prometheus_data:
+  grafana_data:

@@ -1,0 +1,16 @@
+FROM python:3.11.14-bookworm@sha256:7489d7e0542e9e5548fb1b0a8689ae7dfefc10bae31c21aa11f1046a2e5bc37f
+
+WORKDIR /app
+COPY requirements.txt .
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libjson-c-dev=0.16-2 \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install --no-cache-dir --only-binary=:all: --require-hashes -r requirements.txt
+COPY . .
+RUN for role in main fire air light; do \
+      gcc -std=gnu17 -O0 -pthread -Ihardware "$role/node.c" hardware/board.c \
+        -Wl,--wrap=open,--wrap=read,--wrap=write,--wrap=ioctl,--wrap=send -ljson-c -lm -o "$role/node" || exit; \
+    done
+
+ENV PYTHONUNBUFFERED=1
+ENTRYPOINT ["python", "/app/node.py"]

@@ -1,0 +1,19 @@
+services:
+  spring:
+    entrypoint: ["java", "-jar", "/app/app.jar", "--server.port=8080", "--pilab.control.light.queue-capacity=2", "--pilab.control.light.ack-timeout-ms=${PILAB_ACK_TIMEOUT_MS}", "--pilab.control.light.state-file=${PILAB_LIGHT_STATE_FILE}"]
+    environment:
+      PILAB_DROP_FIRST_LIGHT_COMMAND: "${PILAB_DROP_FIRST_LIGHT_COMMAND}"
+  light:
+    build:
+      context: "${PILAB_BUILD}/light"
+    init: true
+    tmpfs: ["/board"]
+    environment:
+      PILAB_HOLD_LIGHT_ACK: "${PILAB_HOLD_LIGHT_ACK:-1}"
+      PILAB_DROP_LIGHT_ACKS: "${PILAB_DROP_LIGHT_ACKS}"
+    depends_on:
+      spring:
+        condition: service_healthy
+    networks:
+      lab:
+        ipv4_address: "${PILAB_PREFIX}.14"

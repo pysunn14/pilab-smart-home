@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PiLab · 통합 작업대</title>
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="dashboard.css">
+  <link rel="stylesheet" href="bench.css">
+  <link rel="stylesheet" href="connected-room.css">
+  <script defer src="room.js"></script>
+  <script defer src="connected-room.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">본문으로 건너뛰기</a>
+  <header class="mast">
+    <div class="mast-content">
+      <a class="wordmark" href="room.html"><i class="brand-trace" aria-hidden="true"></i> PiLab</a>
+      <nav class="view-nav" aria-label="실험 화면">
+        <a href="room.html" aria-current="page">통합 작업대</a>
+        <a href="index.html#replay">예시 재생</a>
+      </nav>
+      <span class="mast-device">Raspberry Pi <span>× 4</span></span>
+    </div>
+  </header>
+  <main id="main" class="workspace" tabindex="-1">
+    <header class="sim-heading">
+      <div>
+        <h1>스마트홈 시뮬레이터</h1>
+        <p>보드에서 입력을 바꾸고 Spring을 거쳐 적용된 출력을 확인합니다.</p>
+      </div>
+      <div class="sim-session">
+        <p class="sim-health" role="status" id="room-health">작업대 연결 확인 중</p>
+        <div class="session-actions" id="room-lifecycle" hidden>
+          <button class="primary" type="button" id="room-start" disabled>실험 시작</button>
+          <button class="stop-button" type="button" id="room-stop" disabled>실험 정지</button>
+        </div>
+      </div>
+    </header>
+    <p class="live-error" id="room-lifecycle-error" role="alert" hidden></p>
+    <section class="sim-topology" aria-label="Spring과 네 Pi의 실시간 연결">
+      <section class="sim-spine" data-device="server" aria-labelledby="spring-title">
+        <div class="sim-hub">
+          <div class="server-unit" aria-hidden="true"><i></i><i></i></div>
+          <h2 id="spring-title">Spring</h2>
+          <p class="sim-link" aria-label="Spring 상태"><i class="pilot"></i><span data-connection>확인 중</span></p>
+          <dl>
+            <div><dt>장치 연결</dt><dd id="room-count">대기</dd></div>
+            <div><dt>WebSocket</dt><dd><code>/socket</code></dd></div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="surface sim-device" data-device="main" aria-labelledby="main-title">
+        <header class="sim-device-head">
+          <img class="sim-board" src="assets/raspberry-pi-3.webp" alt="" width="871" height="573">
+          <div><h2 id="main-title">MainPi</h2><p>버튼 입력</p></div>
+          <p class="sim-link"><i class="pilot"></i><span data-connection>확인 중</span></p>
+        </header>
+        <div class="sim-main-control">
+          <button class="sim-switch" id="room-button" type="button" disabled>
+            <span class="sim-switch-well" aria-hidden="true"><i></i></span>
+            <span><strong>버튼 누르기</strong><small><code>GPIO 20</code></small></span>
+          </button>
+        </div>
+        <dl class="sim-observed">
+          <div><dt>최근 Spring 수신 순번</dt><dd id="room-sequence">미관측</dd></div>
+        </dl>
+      </section>
+
+      <section class="surface sim-device room" data-device="light" aria-labelledby="light-title">
+        <header class="sim-device-head">
+          <img class="sim-board" src="assets/raspberry-pi-3.webp" alt="" width="871" height="573">
+          <div><h2 id="light-title">LightPi</h2><p>조도 · 조명 · 블라인드</p></div>
+          <p class="sim-link"><i class="pilot"></i><span data-connection>확인 중</span></p>
+        </header>
+        <form data-room-api="/api/environment/light" aria-label="조도 입력" inert>
+          <fieldset class="room-controls" disabled>
+            <label>조도<input name="light" type="number" min="0" step="any" inputmode="decimal" required></label>
+            <button class="primary">값 적용</button>
+          </fieldset>
+          <p class="room-status" role="status">센서 입력 확인 중</p>
+        </form>
+        <dl class="sim-observed">
+          <div><dt>수신 조도</dt><dd data-reading="light">미관측</dd></div>
+          <div><dt>가상 LED</dt><dd class="sim-switch-state" data-output="led">미관측</dd></div>
+          <div><dt>블라인드 방향</dt><dd data-output="blind">미관측</dd></div>
+        </dl>
+      </section>
+
+      <section class="surface sim-device room" data-device="air" aria-labelledby="air-title">
+        <header class="sim-device-head">
+          <img class="sim-board" src="assets/raspberry-pi-3.webp" alt="" width="871" height="573">
+          <div><h2 id="air-title">AirPi</h2><p>공기질 · 서보</p></div>
+          <p class="sim-link"><i class="pilot"></i><span data-connection>확인 중</span></p>
+        </header>
+        <form data-room-api="/api/environment" aria-label="공기질 입력" inert>
+          <fieldset class="room-controls" disabled>
+            <label>먼지<input name="dust" type="number" min="0" step="any" inputmode="decimal" required></label>
+            <label>온도<input name="temperature" type="number" step="any" inputmode="decimal" required></label>
+            <label>습도<input name="humidity" type="number" min="0" max="100" step="any" inputmode="decimal" required></label>
+            <button class="primary">값 적용</button>
+          </fieldset>
+          <p class="room-status" role="status">센서 입력 확인 중</p>
+        </form>
+        <dl class="sim-observed">
+          <div><dt>수신 먼지</dt><dd data-reading="dust">미관측</dd></div>
+          <div><dt>수신 온도</dt><dd data-reading="temperature" data-unit=" °C">미관측</dd></div>
+          <div><dt>수신 습도</dt><dd data-reading="humidity" data-unit="%">미관측</dd></div>
+          <div><dt>가상 서보</dt><dd data-output="servo">미관측</dd></div>
+        </dl>
+      </section>
+
+      <section class="surface sim-device room" data-device="fire" aria-labelledby="fire-title">
+        <header class="sim-device-head">
+          <img class="sim-board" src="assets/raspberry-pi-3.webp" alt="" width="871" height="573">
+          <div><h2 id="fire-title">FirePi</h2><p>화재 감지 · 경고등</p></div>
+          <p class="sim-link"><i class="pilot"></i><span data-connection>확인 중</span></p>
+        </header>
+        <form data-room-api="/api/environment/fire" aria-label="화재 입력" inert>
+          <fieldset class="room-controls" disabled>
+            <label>적외선<input name="infra" type="number" min="0" step="any" inputmode="decimal" required></label>
+            <label>가스<input name="gas" type="number" min="0" step="any" inputmode="decimal" required></label>
+            <button class="primary">값 적용</button>
+          </fieldset>
+          <p class="room-status" role="status">센서 입력 확인 중</p>
+        </form>
+        <dl class="sim-observed">
+          <div><dt>수신 적외선</dt><dd data-reading="infra">미관측</dd></div>
+          <div><dt>수신 가스</dt><dd data-reading="gas">미관측</dd></div>
+          <div><dt>가상 경고등</dt><dd class="sim-switch-state" data-output="alarm">미관측</dd></div>
+        </dl>
+      </section>
+    </section>
+    <section class="panel sim-trace" aria-labelledby="room-trace-title">
+      <header>
+        <h2 id="room-trace-title">버튼 제어 경로</h2>
+        <code id="room-command" hidden></code>
+      </header>
+      <ol>
+        <li data-stage="input"><span>MainPi 입력</span><strong>대기</strong></li>
+        <li data-stage="received"><span>Spring 수신</span><strong>대기</strong></li>
+        <li data-stage="applied"><span>LightPi LED 적용</span><strong>대기</strong></li>
+      </ol>
+      <p id="room-button-error" class="live-error" role="alert" hidden></p>
+    </section>
+    <footer class="sim-footer">
+      <span>최근 관측 <time id="room-observed">대기</time></span>
+      <span>보드 이미지 <a href="https://commons.wikimedia.org/wiki/File:Raspberry_Pi_3_Model_B.png">Herbfargus</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a></span>
+    </footer>
+  </main>
+</body>
+</html>

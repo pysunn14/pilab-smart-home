@@ -1,0 +1,13 @@
+FROM python:3.11-trixie@sha256:55c475496e35ad8d898659c85f92b42d3b1c58f25f5d79023baf0840b0b4a462
+
+WORKDIR /app
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libgpiod-dev libcurl4-openssl-dev libjson-c-dev pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+COPY . .
+RUN make -C lightpi light-node \
+    CPPFLAGS="-DPILAB_TRACE_LIGHT_WRITES" \
+    LDLIBS="../light_gpio_stub.c ../light_ack_gate.c" \
+    LDFLAGS="-Wl,--wrap=light_gpio_open,--wrap=light_gpio_close,--wrap=light_gpio_read,--wrap=light_gpio_set,--wrap=light_protocol_send_applied,--wrap=light_rte_receive_command"
+
+ENTRYPOINT ["/app/lightpi/build/light-node", "test:ok", "18", "off", "ws://spring:8080/socket"]

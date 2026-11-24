@@ -1,0 +1,64 @@
+.scope { --scope-amber: #e7b980; --scope-green: #b5e694; }
+.scope-latency, .scope-latency output { white-space: nowrap; }
+.scope-latency { display: flex; align-items: baseline; gap: 8px; color: var(--color-muted); font-size: .75rem; }
+.scope-latency output { color: var(--color-ink); font: 650 .96rem var(--font-data); }
+.scope-body { display: grid; grid-template-columns: 107px minmax(0, 1fr); padding: 0 17px; }
+.channels { display: grid; grid-template-rows: 48px 48px; margin-top: 3px; }
+.channels > span { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.channels code { color: var(--color-ink); font-size: .72rem; }
+.channels small { color: var(--color-muted); font-size: .69rem; }
+.scope-key { width: 9px; height: 2px; flex: 0 0 9px; background: currentColor; }
+.input-color { color: var(--scope-amber); }
+.output-color { color: var(--scope-green); }
+.scope-plot {
+  position: relative;
+  height: 104px;
+  border: 1px solid #293a30;
+  background:
+    linear-gradient(to bottom, #26362d 1px, transparent 1px) 0 0 / 100% 13px,
+    #121b17;
+}
+.scope-plot::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 0 5%;
+  background: linear-gradient(to right, #304136 1px, transparent 1px) 0 0 / 25% 100%;
+}
+.scope-axis { position: relative; height: 22px; color: var(--color-muted); font: .65rem var(--font-data); }
+.scope-axis > span { position: absolute; top: 6px; transform: translateX(-50%); white-space: nowrap; }
+.scope-axis > span:last-child { transform: translateX(-100%); }
+.wave { position: absolute; inset-inline: 0; height: 13px; top: 20px; color: var(--scope-amber); }
+.output-wave { top: 69px; color: var(--scope-green); }
+.wave::before, .wave::after { content: ""; position: absolute; top: 0; height: 100%; border-style: solid; border-color: currentColor; }
+.wave::before { left: 0; width: var(--edge, 5%); border-width: 2px 1px 0 0; }
+.wave::after { left: var(--edge, 5%); right: 0; border-width: 0 0 2px 1px; }
+.wave[data-rising="true"]::before { border-width: 0 1px 2px 0; }
+.wave[data-rising="true"]::after { border-width: 2px 0 0 1px; }
+.input-wave::after { width: 19px; }
+.plot-empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--color-muted); font-size: .8rem; }
+.scope-plot[data-waiting="true"] .plot-empty { inset-block-start: 50%; }
+.scope-note { color: var(--color-muted); font-size: .75rem; padding: 0 17px 11px; }
+
+.stream-empty { color: var(--color-muted); font-size: .83rem; padding: 20px 17px; border-top: 1px solid var(--color-line); }
+.trace-list { list-style: none; padding: 0 17px; margin: 0; }
+.trace-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; padding-block: 8px; border-top: 1px solid var(--color-line); font-size: .81rem; }
+.trace-item > span:first-child { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.trace-item strong { font-weight: 660; }
+.trace-item i { width: 6px; height: 6px; border-radius: 2px; flex: 0 0 6px; background: var(--color-pending); }
+.trace-item[data-stage="applied"] i { background: var(--color-positive); }
+.trace-item code { color: var(--color-muted); white-space: nowrap; font-size: .71rem; }
+.trace-evidence { padding: 0 17px 12px; color: var(--color-muted); font-size: .74rem; }
+.trace-evidence summary { min-height: 32px; cursor: pointer; padding: 6px 0; }
+.trace-evidence summary:hover { color: var(--color-ink); }
+.trace-evidence p { overflow-wrap: anywhere; }
+.trace-raw { padding-left: 16px; margin-block: 5px 0; overflow-wrap: anywhere; }
+
+@media (max-width: 550px) {
+  .scope-body { padding-inline: 11px; grid-template-columns: 75px minmax(0, 1fr); }
+  .channels { grid-template-rows: 48px 48px; }
+  .channels small { display: none; }
+  .channels code { font-size: .7rem; }
+  .scope-axis > span { font-size: .69rem; }
+  .scope-axis > span:nth-child(2n) { display: none; }
+  .scope-note, .trace-list, .trace-evidence, .stream-empty { padding-inline: 11px; }
+}

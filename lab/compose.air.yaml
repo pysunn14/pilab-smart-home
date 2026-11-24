@@ -1,0 +1,17 @@
+services:
+  spring:
+    environment:
+      PILAB_SENSOR_DB_PATH: "${PILAB_SENSOR_DB_PATH:?}"
+      PILAB_AIR_AUTO_SERVO: "${PILAB_AIR_AUTO_SERVO:-false}"
+    volumes:
+      - sensor_history:/var/lib/pilab
+  air:
+    init: true
+    build:
+      context: "${PILAB_BUILD}/air"
+    networks:
+      lab:
+        ipv4_address: "${PILAB_PREFIX}.13"
+
+volumes:
+  sensor_history:

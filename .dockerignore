@@ -1,0 +1,13 @@
+**
+!airpi/
+!airpi/Makefile
+!airpi/air_node.c
+!firepi/
+!firepi/Makefile
+!firepi/fire_node.c
+!common/
+!common/Makefile
+!common/bsw/
+!common/bsw/services/
+!common/bsw/services/telemetry*
+!common/bsw/services/websocket*

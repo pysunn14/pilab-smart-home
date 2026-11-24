@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PiLab · 스마트홈 실험실</title>
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="dashboard.css">
+  <link rel="stylesheet" href="bench.css">
+  <link rel="stylesheet" href="scope.css">
+  <script defer src="model.js"></script>
+  <script defer src="dashboard.js"></script>
+  <script defer src="scope.js"></script>
+  <script defer src="live.js?v=room-routing"></script>
+  <script defer src="room.js"></script>
+  <script defer src="blind.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">본문으로 건너뛰기</a>
+  <header class="mast">
+    <div class="mast-content">
+      <a class="wordmark" href="#bench" aria-label="PiLab 실험 작업대"><i class="brand-trace" aria-hidden="true"></i> PiLab</a>
+      <nav class="view-nav" aria-label="실험실 화면">
+        <a href="#bench" aria-current="page">작업대</a>
+        <a href="#replay">예시 재생</a>
+      </nav>
+      <span class="mast-device">Raspberry Pi <span>× 4</span></span>
+    </div>
+  </header>
+  <main class="workspace" id="main" tabindex="-1">
+    <div id="bench-view">
+      <header class="bench-header">
+        <div>
+          <h1>실험 작업대</h1>
+          <p id="bench-description">GPIO를 조작하고 출력이 바뀌는 순간을 관측합니다.</p>
+        </div>
+        <div class="session-control">
+          <div class="session-state">
+            <i class="pilot" id="session-pilot" aria-hidden="true"></i>
+            <span id="live-status" role="status">실험 상태 확인 중</span>
+          </div>
+          <div class="session-actions" id="live-controls" hidden>
+            <button type="button" class="primary" data-action="start" disabled><i class="play-mark" aria-hidden="true"></i> 실험 시작</button>
+            <button type="button" class="stop-button" data-action="stop" disabled><i aria-hidden="true"></i> 정지</button>
+          </div>
+        </div>
+      </header>
+      <p id="live-error" class="live-error" role="alert" hidden></p>
+
+      <div class="room-grid">
+        <section class="surface room" aria-labelledby="room-title">
+          <header class="surface-head"><h2 id="room-title">가상 방</h2><span class="room-node">AirPi</span></header>
+          <form id="room-form" data-room-api="/api/environment" aria-labelledby="room-title">
+            <fieldset class="room-controls" disabled>
+              <label>먼지<input name="dust" type="number" min="0" step="any" required></label>
+              <label>온도 °C<input name="temperature" type="number" step="any" required></label>
+              <label>습도 %<input name="humidity" type="number" min="0" max="100" step="any" required></label>
+              <button class="primary" disabled>값 적용</button>
+            </fieldset>
+            <p class="room-status" id="room-status" role="status">방 상태 확인 중</p>
+          </form>
+        </section>
+
+        <section class="surface room fire-room" id="fire-room" aria-labelledby="fire-room-title">
+          <header class="surface-head"><h2 id="fire-room-title">화재 감지 입력</h2><span class="room-node">FirePi</span></header>
+          <form data-room-api="/api/environment/fire" aria-labelledby="fire-room-title">
+            <fieldset class="room-controls" disabled>
+              <label>적외선<input name="infra" type="number" min="0" step="any" inputmode="decimal" required></label>
+              <label>가스<input name="gas" type="number" min="0" step="any" inputmode="decimal" required></label>
+              <button class="primary" disabled>값 적용</button>
+            </fieldset>
+            <p class="room-status" role="status">센서 입력 확인 중</p>
+          </form>
+        </section>
+
+        <section class="surface room light-room" id="light-room" aria-labelledby="light-room-title">
+          <header class="surface-head"><h2 id="light-room-title">조도 입력</h2><span class="room-node">LightPi</span></header>
+          <form data-room-api="/api/environment/light" aria-labelledby="light-room-title">
+            <fieldset class="room-controls" disabled>
+              <label>조도<input name="light" type="number" min="0" step="any" inputmode="decimal" required></label>
+              <button class="primary" disabled>값 적용</button>
+            </fieldset>
+            <p class="room-status" role="status">센서 입력 확인 중</p>
+          </form>
+          <form id="blind-controls" aria-labelledby="blind-title" hidden>
+            <h3 id="blind-title">가상 블라인드</h3>
+            <fieldset class="blind-actions" disabled>
+              <button name="direction" value="UP">올리기</button>
+              <button name="direction" value="DOWN">내리기</button>
+            </fieldset>
+            <p class="room-status" role="status">방향 명령 대기 중</p>
+          </form>
+        </section>
+      </div>
+
+      <div class="instrument-grid">
+        <section class="surface board-bay" id="live-lab" aria-labelledby="bay-title" data-bench-state="idle">
+          <header class="surface-head">
+            <h2 id="bay-title">버튼 <span class="head-arrow" aria-hidden="true"></span> <span id="bay-target">조명</span></h2>
+            <span class="technical-label">GPIO 20 <span>→</span> <span id="bay-endpoint">GPIO 18</span></span>
+          </header>
+
+          <div class="mat">
+            <div class="rig">
+              <section class="station" aria-label="버튼 입력 보드">
+                <div class="station-name"><i class="pilot" id="main-pilot" aria-hidden="true"></i><h3>MainPi</h3><span>입력</span></div>
+                <div class="board-seat" aria-hidden="true">
+                  <img class="board-photo" src="assets/raspberry-pi-3.webp" alt="" width="871" height="573">
+                  <div class="jumper"></div>
+                </div>
+                <div class="io-module">
+                  <button class="tactile" type="button" data-action="button" aria-label="GPIO 20 버튼 누르기" aria-describedby="button-hint" disabled>
+                    <i class="switch-plinth" aria-hidden="true"><span class="switch-cap"></span></i>
+                  </button>
+                  <div class="io-copy"><code>GPIO 20</code><strong>버튼 누르기</strong><small id="button-hint">실험 시작 후 사용</small></div>
+                </div>
+              </section>
+
+              <div class="bridge" aria-label="Spring 서버를 거치는 WebSocket 경로">
+                <span class="bridge-wire" id="main-wire" aria-hidden="true"></span>
+                <div class="bridge-center">
+                  <div class="server-unit" aria-hidden="true">
+                    <i></i><i></i>
+                  </div>
+                  <strong>Spring</strong><code id="bridge-endpoint">WSS /socket</code>
+                </div>
+                <span class="bridge-wire" id="light-wire" aria-hidden="true"></span>
+              </div>
+
+              <section class="station" aria-label="LED 출력 보드">
+                <div class="station-name"><i class="pilot" id="light-pilot" aria-hidden="true"></i><h3>LightPi</h3><span>출력</span></div>
+                <div class="board-seat" aria-hidden="true">
+                  <img class="board-photo" src="assets/raspberry-pi-3.webp" alt="" width="871" height="573">
+                  <div class="jumper jumper-output"></div>
+                </div>
+                <div class="io-module">
+                  <div class="lamp-module" aria-hidden="true"><i class="lamp" id="led-lamp"></i></div>
+                  <div class="io-copy"><code>GPIO 18</code><strong>가상 LED</strong><small id="live-led">미관측</small></div>
+                </div>
+              </section>
+            </div>
+          </div>
+          <footer class="bay-foot">
+            <span id="bench-note">실험을 시작해 가상 보드를 연결하세요.</span>
+            <span><i class="connection-key" aria-hidden="true"></i> WebSocket 경로</span>
+          </footer>
+        </section>
+
+        <section class="surface node-monitor" aria-labelledby="monitor-title">
+          <header class="surface-head">
+            <h2 id="monitor-title">노드 상태</h2>
+            <span id="live-nodes" class="technical-label" aria-label="연결된 Pi 수">— / 4</span>
+          </header>
+          <ul class="monitor-list">
+            <li data-role="server"><span class="monitor-symbol is-server" aria-hidden="true"></span><span><strong>Spring</strong><small>중앙 서버</small></span><span class="monitor-status"><i class="pilot"></i><span>대기</span></span></li>
+            <li data-role="main"><span class="monitor-symbol is-pi" aria-hidden="true"></span><span><strong>MainPi</strong><small id="main-detail">버튼 · LCD</small></span><span class="monitor-status"><i class="pilot"></i><span>대기</span></span></li>
+            <li data-role="light"><span class="monitor-symbol is-pi" aria-hidden="true"></span><span><strong>LightPi</strong><small>조도 · LED</small></span><span class="monitor-status"><i class="pilot"></i><span>대기</span></span></li>
+            <li data-role="fire"><span class="monitor-symbol is-pi" aria-hidden="true"></span><span><strong>FirePi</strong><small>화재 감지 센서</small></span><span class="monitor-status"><i class="pilot"></i><span>대기</span></span></li>
+            <li data-role="air"><span class="monitor-symbol is-pi" aria-hidden="true"></span><span><strong>AirPi</strong><small>먼지 · 온습도</small></span><span class="monitor-status"><i class="pilot"></i><span>대기</span></span></li>
+          </ul>
+          <footer class="monitor-foot"><span>최근 상태 조회</span><time id="last-observation">—</time></footer>
+        </section>
+
+        <section class="surface scope" id="gpio-scope" aria-labelledby="scope-title">
+          <header class="surface-head">
+            <h2 id="scope-title">GPIO 신호</h2>
+            <span class="scope-latency"><span>입력 → 출력</span> <output id="live-latency">—</output></span>
+          </header>
+          <div class="scope-body">
+            <div class="channels" aria-hidden="true">
+              <span><i class="scope-key input-color"></i> <code>GPIO 20</code> <small>입력</small></span>
+              <span><i class="scope-key output-color"></i> <code>GPIO 18</code> <small>출력</small></span>
+            </div>
+            <div class="scope-main">
+              <div id="scope-plot" class="scope-plot" role="img" aria-label="아직 관측한 GPIO 전이가 없습니다.">
+                <div class="wave input-wave" id="input-wave" hidden></div>
+                <div class="wave output-wave" id="output-wave" hidden></div>
+                <div class="plot-empty" id="plot-empty">버튼 입력 대기</div>
+              </div>
+              <div class="scope-axis" id="scope-axis" aria-hidden="true"></div>
+            </div>
+          </div>
+          <p class="scope-note">입력 시점을 0 ms로 놓고 관측된 전이를 표시합니다.</p>
+        </section>
+
+        <section class="surface stream" aria-labelledby="stream-title">
+          <header class="surface-head">
+            <h2 id="stream-title">이벤트 기록</h2>
+            <span class="technical-label" id="trace-count">0건</span>
+          </header>
+          <p class="stream-empty" id="trace-empty">버튼을 누르면 입력과 출력이 여기에 기록됩니다.</p>
+          <ol class="trace-list" id="live-rows" hidden></ol>
+          <details class="trace-evidence" id="live-evidence" hidden>
+            <summary>원시 시각과 실행 ID</summary>
+            <p><code id="live-run-id"></code></p>
+            <ul class="trace-raw" id="trace-raw"></ul>
+          </details>
+        </section>
+      </div>
+
+      <footer class="credits">보드 이미지 <a href="https://commons.wikimedia.org/wiki/File:Raspberry_Pi_3_Model_B.png">Herbfargus</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · WebP 변환</footer>
+    </div>
+    <div id="replay-view" hidden>
+      <header class="workspace-header">
+        <div><h1>예시 재생</h1><p>기록된 예시로 네트워크 경로와 메시지를 살펴봅니다.</p></div>
+        <form id="scenario-form" class="scenario-form">
+          <label class="visually-hidden" for="scenario">예시 시나리오</label>
+          <select id="scenario" name="scenario"></select>
+          <button type="submit" class="primary" id="run"><span class="play-mark" aria-hidden="true"></span><span id="run-label">실행</span></button>
+        </form>
+      </header>
+      <section class="summary" aria-label="예시 재생 요약">
+        <div><span>중앙 서버</span><strong><i class="dot"></i> Spring</strong></div>
+        <div><span>연결된 Pi</span><strong><span id="connected" class="stat-number">4 / 4</span></strong></div>
+        <div><span>서버 엔드포인트</span><strong><code>/socket</code></strong></div>
+        <div><span>데이터</span><strong><i class="sample-mark"></i> 예시 재생</strong></div>
+      </section>
+
+      <div class="workbench">
+        <section class="panel topology-panel" aria-labelledby="topology-title">
+          <header class="panel-head">
+            <h2 id="topology-title">네트워크 토폴로지</h2>
+            <span class="technical-label">WSS /socket</span>
+          </header>
+          <div id="topology" class="topology">
+            <canvas id="wires" aria-hidden="true"></canvas>
+            <div id="node-buttons" class="node-buttons" role="group" aria-label="네트워크 노드"></div>
+          </div>
+          <footer class="topology-legend" aria-label="연결선 범례">
+            <span><i class="legend-line"></i> WebSocket 연결</span>
+            <span><i class="legend-line legend-offline"></i> 연결 끊김</span>
+          </footer>
+        </section>
+
+        <section class="panel inspector" aria-labelledby="inspector-title">
+          <header class="panel-head">
+            <h2 id="inspector-title">노드 상세</h2>
+          </header>
+          <div id="node-detail" class="node-detail" aria-live="polite"></div>
+        </section>
+      </div>
+
+      <section class="panel event-panel" id="replay-events" aria-labelledby="events-title">
+        <header class="panel-head event-head">
+          <div><h2 id="events-title">이벤트 기록</h2><p id="trace-caption">정상 통신 · 예시 트레이스</p></div>
+          <div class="event-tools">
+            <label class="visually-hidden" for="filter">이벤트 노드 필터</label>
+            <select id="filter" name="filter"></select>
+          </div>
+        </header>
+        <p id="run-status" role="status" class="visually-hidden"></p>
+        <table class="event-table">
+          <thead><tr><th scope="col">경과</th><th scope="col">노드</th><th scope="col">서버 기준</th><th scope="col">메시지</th><th scope="col">값</th></tr></thead>
+          <tbody id="event-rows"></tbody>
+        </table>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

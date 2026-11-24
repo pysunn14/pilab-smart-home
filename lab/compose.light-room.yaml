@@ -1,0 +1,10 @@
+services:
+  spring:
+    environment:
+      PILAB_SENSOR_DB_PATH: "${PILAB_SENSOR_DB_PATH:?}"
+      PILAB_LIGHT_AUTO_BLIND: "${PILAB_LIGHT_AUTO_BLIND:?}"
+    volumes:
+      - sensor_history:/var/lib/pilab
+
+volumes:
+  sensor_history:
